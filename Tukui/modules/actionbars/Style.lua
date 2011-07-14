@@ -30,7 +30,7 @@ local function style(self)
  
 	Count:ClearAllPoints()
 	Count:Point("BOTTOMRIGHT", 0, 2)
-	Count:SetFont(C["media"].font, 12, "OUTLINE")
+	Count:SetFont(C["media"].uffont, 8, "MONOCHROMEOUTLINE")
  
 	Btname:SetText("")
 	Btname:Kill()
@@ -49,13 +49,13 @@ local function style(self)
 		panel:SetFrameLevel(self:GetFrameLevel() - 1)
  
 		Icon:SetTexCoord(.08, .92, .08, .92)
-		Icon:Point("TOPLEFT", Button, 2, -2)
-		Icon:Point("BOTTOMRIGHT", Button, -2, 2)
+		Icon:Point("TOPLEFT", Button, T.pix, -T.pix)
+		Icon:Point("BOTTOMRIGHT", Button, -T.pix, T.pix)
 	end
 
 	HotKey:ClearAllPoints()
 	HotKey:Point("TOPRIGHT", 0, -3)
-	HotKey:SetFont(C["media"].font, 12, "OUTLINE")
+	HotKey:SetFont(C["media"].uffont, 8, "MONOCHROMEOUTLINE")
 	HotKey.ClearAllPoints = T.dummy
 	HotKey.SetPoint = T.dummy
  
@@ -101,8 +101,8 @@ local function stylesmallbutton(normal, button, icon, name, pet)
 			shine:Size(T.petbuttonsize, T.petbuttonsize)
 			shine:ClearAllPoints()
 			shine:SetPoint("CENTER", button, 0, 0)
-			icon:Point("TOPLEFT", button, T.Scale(2), T.Scale(-2))
-			icon:Point("BOTTOMRIGHT", button, T.Scale(-2), T.Scale(2))
+			icon:Point("TOPLEFT", button, T.pix, -T.pix)
+			icon:Point("BOTTOMRIGHT", button, -T.pix, T.pix)
 		else
 			icon:Point("TOPLEFT", button, 2, -2)
 			icon:Point("BOTTOMRIGHT", button, -2, 2)
@@ -175,8 +175,8 @@ for _, name in ipairs( buttonNames ) do
 		end
 		
 		cooldown:ClearAllPoints()
-		cooldown:Point("TOPLEFT", button, "TOPLEFT", 2, -2)
-		cooldown:Point("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
+		cooldown:Point("TOPLEFT", button, "TOPLEFT", T.pix, -T.pix)
+		cooldown:Point("BOTTOMRIGHT", button, "BOTTOMRIGHT", -T.pix, T.pix)
 	end
 end
 
@@ -186,7 +186,10 @@ local function SetupFlyoutButton()
 		--prevent error if you don't have max ammount of buttons
 		if _G["SpellFlyoutButton"..i] then
 			style(_G["SpellFlyoutButton"..i])
-			_G["SpellFlyoutButton"..i]:StyleButton(true)
+					
+			if _G["SpellFlyoutButton"..i]:GetChecked() then
+				_G["SpellFlyoutButton"..i]:SetChecked(nil)
+			end
 		end
 	end
 end
@@ -308,8 +311,8 @@ local function StyleTotemFlyout(flyout)
 		local icon = select(1,button:GetRegions())
 		icon:SetTexCoord(.09,.91,.09,.91)
 		icon:SetDrawLayer("ARTWORK")
-		icon:Point("TOPLEFT",button,"TOPLEFT",2,-2)
-		icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-2,2)			
+		icon:Point("TOPLEFT",button,"TOPLEFT", T.pix,-T.pix)
+		icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-T.pix,T.pix)			
 		if not InCombatLockdown() then
 			button:Size(30,30)
 			button:ClearAllPoints()
@@ -381,8 +384,8 @@ local function StyleTotemSlotButton(button, index)
 	button.overlayTex:SetTexture(nil)
 	button.background:SetDrawLayer("ARTWORK")
 	button.background:ClearAllPoints()
-	button.background:SetPoint("TOPLEFT",button,"TOPLEFT",T.Scale(2),T.Scale(-2))
-	button.background:SetPoint("BOTTOMRIGHT",button,"BOTTOMRIGHT",T.Scale(-2),T.Scale(2))
+	button.background:Point("TOPLEFT",button,"TOPLEFT",T.pix,-T.pix)
+	button.background:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-T.pix,T.pix)
 	if not InCombatLockdown() then button:Size(30) end
 	button:SetBackdropBorderColor(unpack(bordercolors[((index-1) % 4) + 1]))
 	button:StyleButton()
@@ -394,8 +397,8 @@ local function StyleTotemActionButton(button, index)
 	local icon = select(1,button:GetRegions())
 	icon:SetTexCoord(.09,.91,.09,.91)
 	icon:SetDrawLayer("ARTWORK")
-	icon:Point("TOPLEFT",button,"TOPLEFT",2,-2)
-	icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-2,2)
+	icon:Point("TOPLEFT",button,"TOPLEFT",T.pix,-T.pix)
+	icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-T.pix,T.pix)
 	button.overlayTex:SetTexture(nil)
 	button.overlayTex:Hide()
 	button:GetNormalTexture():SetTexCoord(0,0,0,0)
@@ -416,8 +419,8 @@ local function StyleTotemSpellButton(button, index)
 	local icon = select(1,button:GetRegions())
 	icon:SetTexCoord(.09,.91,.09,.91)
 	icon:SetDrawLayer("ARTWORK")
-	icon:Point("TOPLEFT",button,"TOPLEFT",2,-2)
-	icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-2,2)
+	icon:Point("TOPLEFT",button,"TOPLEFT",T.pix,-T.pix)
+	icon:Point("BOTTOMRIGHT",button,"BOTTOMRIGHT",-T.pix,T.pix)
 	button:SetTemplate("Default")
 	button:GetNormalTexture():SetTexture(nil)
 	if not InCombatLockdown() then button:Size(30, 30) end

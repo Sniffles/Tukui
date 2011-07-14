@@ -85,11 +85,10 @@ local function SetTemplate(f, t, tex)
 	f:SetBackdrop({
 	  bgFile = texture, 
 	  edgeFile = C.media.blank, 
-	  tile = false, tileSize = 0, edgeSize = mult, 
-	  insets = { left = -mult, right = -mult, top = -mult, bottom = -mult}
+	  edgeSize = 1, 
 	})
 	
-	if t == "Transparent" then backdropa = 0.8 else backdropa = 1 end
+	if t == "Transparent" then backdropa = 0.8 else backdropa = .5 end
 	
 	f:SetBackdropColor(backdropr, backdropg, backdropb, backdropa)
 	f:SetBackdropBorderColor(borderr, borderg, borderb)
@@ -98,7 +97,7 @@ end
 local function CreatePanel(f, t, w, h, a1, p, a2, x, y)
 	GetTemplate(t)
 	
-	if t == "Transparent" then backdropa = 0.8 else backdropa = 1 end
+	if t == "Transparent" then backdropa = 0.8 else backdropa = .5 end
 	
 	local sh = Scale(h)
 	local sw = Scale(w)
@@ -110,8 +109,7 @@ local function CreatePanel(f, t, w, h, a1, p, a2, x, y)
 	f:SetBackdrop({
 	  bgFile = C["media"].blank, 
 	  edgeFile = C["media"].blank, 
-	  tile = false, tileSize = 0, edgeSize = mult, 
-	  insets = { left = -mult, right = -mult, top = -mult, bottom = -mult}
+	  edgeSize = 1, 
 	})
 	
 	f:SetBackdropColor(backdropr, backdropg, backdropb, backdropa)
@@ -173,16 +171,16 @@ local function StyleButton(b, c)
 	hover:SetTexture(1,1,1,0.3)
 	hover:SetHeight(button:GetHeight())
 	hover:SetWidth(button:GetWidth())
-	hover:Point("TOPLEFT",button,2,-2)
-	hover:Point("BOTTOMRIGHT",button,-2,2)
+	hover:Point("TOPLEFT",button, -(T.pix), T.pix)
+	hover:Point("BOTTOMRIGHT",button, T.pix, -(T.pix))
 	button:SetHighlightTexture(hover)
 
 	local pushed = b:CreateTexture("frame", nil, self) -- pushed
 	pushed:SetTexture(0.9,0.8,0.1,0.3)
 	pushed:SetHeight(button:GetHeight())
 	pushed:SetWidth(button:GetWidth())
-	pushed:Point("TOPLEFT",button,2,-2)
-	pushed:Point("BOTTOMRIGHT",button,-2,2)
+	pushed:Point("TOPLEFT",button, -(T.pix), T.pix)
+	pushed:Point("BOTTOMRIGHT",button, T.pix, -(T.pix))
 	button:SetPushedTexture(pushed)
  
 	if c then
@@ -190,8 +188,8 @@ local function StyleButton(b, c)
 		checked:SetTexture(0,1,0,0.3)
 		checked:SetHeight(button:GetHeight())
 		checked:SetWidth(button:GetWidth())
-		checked:Point("TOPLEFT",button,2,-2)
-		checked:Point("BOTTOMRIGHT",button,-2,2)
+		checked:Point("TOPLEFT",button, -(T.pix), T.pix)
+		checked:Point("BOTTOMRIGHT",button, T.pix, -(T.pix))
 		button:SetCheckedTexture(checked)
 	end
 end
@@ -212,11 +210,94 @@ local function FontString(parent, name, fontName, fontHeight, fontStyle)
 	return fs
 end
 
+local function HighlightTarget(self, event, unit)
+	if self.unit == "target" then return end
+	if UnitIsUnit('target', self.unit) then
+		self.HighlightTarget:Show()
+	else
+		self.HighlightTarget:Hide()
+	end
+end
+
+local function HighlightUnit(f, r, g, b)
+	if f.HighlightTarget then return end
+	local glowBorder = {edgeFile = C["media"].blank, edgeSize = 1}
+	f.HighlightTarget = CreateFrame("Frame", nil, f)
+	f.HighlightTarget:Point("TOPLEFT", f, "TOPLEFT", -(T.pix), T.pix)
+	f.HighlightTarget:Point("BOTTOMRIGHT", f, "BOTTOMRIGHT", T.pix, -(T.pix))
+	f.HighlightTarget:SetBackdrop(glowBorder)
+	f.HighlightTarget:SetFrameLevel(f:GetFrameLevel() + 1)
+	f.HighlightTarget:SetBackdropBorderColor(r,g,b,1)
+	f.HighlightTarget:Hide()
+	f:RegisterEvent("PLAYER_TARGET_CHANGED", HighlightTarget)
+end
+
+local function StripTextures(object, kill)
+	for i=1, object:GetNumRegions() do
+		local region = select(i, object:GetRegions())
+		if region:GetObjectType() == "Texture" then
+			if kill then
+				region:Kill()
+			else
+				region:SetTexture(nil)
+			end
+		end
+	end		
+end
+
+-- Now easier to create borders *_*
+local function AddBorder(f)
+	local frame = CreateFrame("Frame", nil, f)
+	frame:Point("TOPLEFT", f, "TOPLEFT", -(T.pix), T.pix)
+	frame:Point("BOTTOMRIGHT", f, "BOTTOMRIGHT", T.pix, -(T.pix))
+	frame:SetTemplate("Default")
+	frame:SetFrameLevel(f:GetFrameLevel())
+	f.Border = frame
+end
+
+-- Actionbar Specific
+
+local function OnMouseOver(bar, button, num, baralpha, fadealpha)
+	if bar and bar:IsShown() then
+		if not bar:EnableMouse() == true then
+			bar:EnableMouse(true)
+		end
+	bar:SetAlpha(baralpha)
+	bar:SetScript("OnEnter", function(self) self:SetAlpha(fadealpha) end)
+	bar:SetScript("OnLeave", function(self) self:SetAlpha(baralpha) end)
+	
+		for i = 1, num do
+			local btn = _G[button..i]
+			btn:SetScript("OnEnter", function() bar:SetAlpha(fadealpha) end)
+			btn:SetScript("OnLeave", function() bar:SetAlpha(baralpha) end)
+		end
+	end
+end
+
+-- Piss off Backdrops ~_~
+local function RemoveBD(f)
+	f:SetBackdrop(nil)
+end
+
+-- Do not use this for chatframe :X
+local function HideInCombat(f)
+	f:RegisterEvent("PLAYER_REGEN_ENABLED")
+	f:RegisterEvent("PLAYER_REGEN_DISABLED")
+	f:SetScript("OnEvent", function(self, event, ...)
+		if (event == "PLAYER_REGEN_DISABLED") then
+			self:Hide()
+		elseif (event == "PLAYER_REGEN_ENABLED") then
+			self:Show()
+		end
+	end)	
+end
+
 local function addapi(object)
 	local mt = getmetatable(object).__index
 	if not object.Size then mt.Size = Size end
 	if not object.Point then mt.Point = Point end
 	if not object.SetTemplate then mt.SetTemplate = SetTemplate end
+	if not object.StripTextures then mt.StripTextures = StripTextures end
 	if not object.CreatePanel then mt.CreatePanel = CreatePanel end
 	if not object.CreateShadow then mt.CreateShadow = CreateShadow end
 	if not object.Kill then mt.Kill = Kill end
@@ -224,6 +305,11 @@ local function addapi(object)
 	if not object.Width then mt.Width = Width end
 	if not object.Height then mt.Height = Height end
 	if not object.FontString then mt.FontString = FontString end
+	if not object.HighlightUnit then mt.HighlightUnit = HighlightUnit end
+	if not object.AddBorder then mt.AddBorder = AddBorder end
+	if not object.RemoveBD then mt.RemoveBD = RemoveBD end
+	if not object.OnMouseOver then mt.OnMouseOver = OnMouseOver end
+	if not object.HideInCombat then mt.HideInCombat = HideInCombat end
 end
 
 local handled = {["Frame"] = true}

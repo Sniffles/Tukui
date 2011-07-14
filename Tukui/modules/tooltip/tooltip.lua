@@ -11,7 +11,7 @@ local GameTooltip, GameTooltipStatusBar = _G["GameTooltip"], _G["GameTooltipStat
 
 local gsub, find, format = string.gsub, string.find, string.format
 
-local Tooltips = {GameTooltip,ShoppingTooltip1,ShoppingTooltip2,ShoppingTooltip3,WorldMapTooltip}
+local Tooltips = {GameTooltip,ShoppingTooltip1,ShoppingTooltip2,ShoppingTooltip3,WorldMapTooltip,WorldMapCompareTooltip1,WorldMapCompareTooltip2,WorldMapCompareTooltip3}
 local ItemRefTooltip = ItemRefTooltip
 
 local linkTypes = {item = true, enchant = true, spell = true, quest = true, unit = true, talent = true, achievement = true, glyph = true}
@@ -26,20 +26,16 @@ local classification = {
 local NeedBackdropBorderRefresh = true
 
 local anchor = CreateFrame("Frame", "TukuiTooltipAnchor", UIParent)
-anchor:SetSize(200, TukuiInfoRight:GetHeight())
+anchor:SetSize(200, 15)
 anchor:SetFrameStrata("TOOLTIP")
 anchor:SetFrameLevel(20)
 anchor:SetClampedToScreen(true)
 anchor:SetAlpha(0)
-if C.chat.background and TukuiChatBackgroundRight then
-	anchor:SetPoint("BOTTOMRIGHT", TukuiChatBackgroundRight, "TOPRIGHT", 0, -TukuiInfoRight:GetHeight())
-else
-	anchor:SetPoint("BOTTOMRIGHT", TukuiInfoRight)
-end
+anchor:Point("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -20, 67)
 anchor:SetTemplate("Default")
 anchor:SetBackdropBorderColor(1, 0, 0, 1)
 anchor:SetMovable(true)
-anchor.text = T.SetFontString(anchor, C.media.uffont, 12)
+anchor.text = T.SetFontString(anchor, C.media.uffont, 8, "MONOCHROMEOUTLINE")
 anchor.text:SetPoint("CENTER")
 anchor.text:SetText(L.move_tooltip)
 
@@ -58,6 +54,7 @@ local function UpdateTooltip(self)
 		-- h4x for world object tooltip border showing last border color 
 		-- or showing background sometime ~blue :x		
 		if NeedBackdropBorderRefresh then
+			self:ClearAllPoints()
 			NeedBackdropBorderRefresh = false			
 			self:SetBackdropColor(unpack(C.media.backdropcolor))
 			if not C["tooltip"].cursor then
@@ -119,6 +116,8 @@ hooksecurefunc("GameTooltip_SetDefaultAnchor", function(self, parent)
 	else
 		self:SetOwner(parent, "ANCHOR_NONE")
 	end
+	
+	self:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -111111, -111111) -- hack to update GameStatusBar instantly.
 end)
 
 GameTooltip:HookScript("OnUpdate", function(self, ...) UpdateTooltip(self) end)
@@ -361,36 +360,51 @@ local SetStyle = function(self)
 end
 
 TukuiTooltip:RegisterEvent("PLAYER_ENTERING_WORLD")
-TukuiTooltip:SetScript("OnEvent", function(self)
-	for _, tt in pairs(Tooltips) do
-		tt:HookScript("OnShow", SetStyle)
-	end
-	
-	ItemRefTooltip:HookScript("OnTooltipSetItem", SetStyle)
-	ItemRefTooltip:HookScript("OnShow", SetStyle)	
-	FriendsTooltip:SetTemplate("Default")
-		
-	self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-	self:SetScript("OnEvent", nil)
-	
-	-- move health status bar if anchor is found at top
-	local position = TukuiTooltipAnchor:GetPoint()
-	if position:match("TOP") then
-		healthBar:ClearAllPoints()
-		healthBar:Point("TOPLEFT", healthBar:GetParent(), "BOTTOMLEFT", 2, -5)
-		healthBar:Point("TOPRIGHT", healthBar:GetParent(), "BOTTOMRIGHT", -2, -5)
-	end
-	
-	-- Hide tooltips in combat for actions, pet actions and shapeshift
-	if C["tooltip"].hidebuttons == true then
-		local CombatHideActionButtonsTooltip = function(self)
-			if not IsShiftKeyDown() then
-				self:Hide()
-			end
+TukuiTooltip:RegisterEvent("ADDON_LOADED")
+TukuiTooltip:SetScript("OnEvent", function(self, event, addon)
+	if event == "PLAYER_ENTERING_WORLD" then
+		for _, tt in pairs(Tooltips) do
+			tt:HookScript("OnShow", SetStyle)
 		end
-	 
-		hooksecurefunc(GameTooltip, "SetAction", CombatHideActionButtonsTooltip)
-		hooksecurefunc(GameTooltip, "SetPetAction", CombatHideActionButtonsTooltip)
-		hooksecurefunc(GameTooltip, "SetShapeshift", CombatHideActionButtonsTooltip)
+		
+		ItemRefTooltip:HookScript("OnTooltipSetItem", SetStyle)
+		ItemRefTooltip:HookScript("OnShow", SetStyle)	
+		FriendsTooltip:SetTemplate("Default")
+			
+		self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+		
+		-- move health status bar if anchor is found at top
+		local position = TukuiTooltipAnchor:GetPoint()
+		if position:match("TOP") then
+			healthBar:ClearAllPoints()
+			healthBar:Point("TOPLEFT", healthBar:GetParent(), "BOTTOMLEFT", 2, -5)
+			healthBar:Point("TOPRIGHT", healthBar:GetParent(), "BOTTOMRIGHT", -2, -5)
+		end
+		
+		-- Hide tooltips in combat for actions, pet actions and shapeshift
+		if C["tooltip"].hidebuttons == true then
+			local CombatHideActionButtonsTooltip = function(self)
+				if not IsShiftKeyDown() then
+					self:Hide()
+				end
+			end
+		 
+			hooksecurefunc(GameTooltip, "SetAction", CombatHideActionButtonsTooltip)
+			hooksecurefunc(GameTooltip, "SetPetAction", CombatHideActionButtonsTooltip)
+			hooksecurefunc(GameTooltip, "SetShapeshift", CombatHideActionButtonsTooltip)
+		end
+	else
+		if addon ~= "Blizzard_DebugTools" then return end
+		
+		if FrameStackTooltip then
+			FrameStackTooltip:SetScale(C.general.uiscale)
+			
+			-- Skin it
+			FrameStackTooltip:HookScript("OnShow", function(self) self:SetTemplate("Default") end)
+		end
+		
+		if EventTraceTooltip then
+			EventTraceTooltip:HookScript("OnShow", function(self) self:SetTemplate("Default") end)
+		end
 	end
 end)

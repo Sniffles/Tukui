@@ -6,8 +6,8 @@ local T, C, L = unpack(select(2, ...)) -- Import: T - functions, constants, vari
 if not C["datatext"].mastery == nil or C["datatext"].mastery > 0 then
 	local Stat = CreateFrame("Frame")
 
-	local Text  = TukuiInfoLeft:CreateFontString(nil, "OVERLAY")
-	Text:SetFont(C.media.font, C["datatext"].fontsize)
+	local Text  = TukuiInfoPanel:CreateFontString(nil, "OVERLAY")
+	Text:SetFont(C.media.uffont, C["datatext"].fontsize)
 	T.PP(C["datatext"].mastery, Text)
 
 	local int = 1

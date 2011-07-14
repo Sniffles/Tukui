@@ -395,9 +395,9 @@ function Stuffing:CreateBagFrame(w)
 	f:SetFrameLevel(20)
 
 	if w == "Bank" then
-		f:Point("BOTTOMLEFT", TukuiInfoLeft, "TOPLEFT", 0, 5)
+		f:Point("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 5, 5)
 	else
-		f:Point("BOTTOMRIGHT", TukuiInfoRight, "TOPRIGHT", 0, 5)
+		f:Point("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -5, 5)
 	end
 	
 	-- close button
@@ -866,7 +866,8 @@ function Stuffing:ADDON_LOADED(addon)
 
 	ToggleBackpack = Stuffing_Toggle
 	ToggleBag = Stuffing_ToggleBag
-	OpenAllBags = Stuffing_Toggle
+	ToggleAllBags = Stuffing_Toggle
+	OpenAllBags = Stuffing_Open
 	OpenBackpack = Stuffing_Open
 	CloseAllBags = Stuffing_Close
 	CloseBackpack = Stuffing_Close
@@ -877,6 +878,8 @@ end
 function Stuffing:PLAYER_ENTERING_WORLD()
 	-- please don't do anything after 1 player_entering_world event.
 	Stuffing:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	
+	if T.toc >= 40200 then return end
 	
 	-- hooking and setting key ring bag
 	-- this is just a reskin of Blizzard key bag to fit Tukui
@@ -909,7 +912,7 @@ function Stuffing:PLAYER_ENTERING_WORLD()
 	end)
 	
 	ContainerFrame1:ClearAllPoints()
-	ContainerFrame1:Point("BOTTOMRIGHT", TukuiInfoRight, "TOPRIGHT", 4, 5)
+	ContainerFrame1:Point("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -5, 5)
 	ContainerFrame1.ClearAllPoints = T.dummy
 	ContainerFrame1.SetPoint = T.dummy
 end
@@ -1391,23 +1394,25 @@ function Stuffing.Menu(self, level)
 	end
 	UIDropDownMenu_AddButton(info, level)
 
-	wipe(info)
-	info.text = KEYRING
-	info.checked = function()
-		return key_ring == 1
-	end
-
-	info.func = function()
-		if key_ring == 1 then
-			key_ring = 0
-		else
-			key_ring = 1
+	if T.toc < 40200 then
+		wipe(info)
+		info.text = KEYRING
+		info.checked = function()
+			return key_ring == 1
 		end
-		Stuffing_Toggle()
-		ToggleKeyRing()
-		Stuffing:Layout()
+
+		info.func = function()
+			if key_ring == 1 then
+				key_ring = 0
+			else
+				key_ring = 1
+			end
+			Stuffing_Toggle()
+			ToggleKeyRing()
+			Stuffing:Layout()
+		end
+		UIDropDownMenu_AddButton(info, level)
 	end
-	UIDropDownMenu_AddButton(info, level)
 
 	wipe(info)
 	info.disabled = nil

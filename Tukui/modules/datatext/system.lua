@@ -12,8 +12,8 @@ Stat:SetFrameLevel(3)
 Stat:EnableMouse(true)
 Stat.tooltip = false
 
-local Text  = TukuiInfoLeft:CreateFontString(nil, "OVERLAY")
-Text:SetFont(C.media.font, C["datatext"].fontsize)
+local Text  = TukuiInfoPanel:CreateFontString(nil, "OVERLAY")
+Text:SetFont(C.media.uffont, C["datatext"].fontsize)
 T.PP(C["datatext"].system, Text)
 
 local bandwidthString = "%.2f Mbps"
@@ -90,7 +90,8 @@ Stat:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(panel, anchor, xoff, yoff)
 		GameTooltip:ClearLines()
 		if bandwidth ~= 0 then
-			GameTooltip:AddDoubleLine(L.datatext_bandwidth , string.format(bandwidthString, bandwidth),0.69, 0.31, 0.31,0.84, 0.75, 0.65)
+			-- GetAvailableBandwidth() func is bugged as always, commenting for now
+			-- GameTooltip:AddDoubleLine(L.datatext_bandwidth , string.format(bandwidthString, bandwidth),0.69, 0.31, 0.31,0.84, 0.75, 0.65)
 			GameTooltip:AddDoubleLine(L.datatext_download , string.format(percentageString, GetDownloadedPercentage() *100),0.69, 0.31, 0.31, 0.84, 0.75, 0.65)
 			GameTooltip:AddLine(" ")
 		end

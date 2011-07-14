@@ -6,11 +6,14 @@ local T, C, L = unpack(select(2, ...)) -- Import: T - functions, constants, vari
 local TukuiMinimap = CreateFrame("Frame", "TukuiMinimap", UIParent)
 TukuiMinimap:CreatePanel("Default", 1, 1, "CENTER", UIParent, "CENTER", 0, 0)
 TukuiMinimap:RegisterEvent("ADDON_LOADED")
+TukuiMinimap:RegisterEvent("CALENDAR_UPDATE_PENDING_INVITES")
+TukuiMinimap:RegisterEvent("UPDATE_PENDING_MAIL")
+TukuiMinimap:RegisterEvent("PLAYER_ENTERING_WORLD")
 TukuiMinimap:Point("TOPRIGHT", UIParent, "TOPRIGHT", -24, -22)
 TukuiMinimap:Size(144)
 TukuiMinimap:SetClampedToScreen(true)
 TukuiMinimap:SetMovable(true)
-TukuiMinimap.text = T.SetFontString(TukuiMinimap, C.media.uffont, 12)
+TukuiMinimap.text = T.SetFontString(TukuiMinimap, C.media.font, 12)
 TukuiMinimap.text:SetPoint("CENTER")
 TukuiMinimap.text:SetText(L.move_minimap)
 
@@ -20,8 +23,8 @@ MinimapCluster:Kill()
 -- Parent Minimap into our Map frame.
 Minimap:SetParent(TukuiMinimap)
 Minimap:ClearAllPoints()
-Minimap:Point("TOPLEFT", 2, -2)
-Minimap:Point("BOTTOMRIGHT", -2, 2)
+Minimap:Point("TOPLEFT", TukuiMinimap, "TOPLEFT", 2, 2)
+Minimap:Point("BOTTOMRIGHT", TukuiMinimap, "BOTTOMRIGHT", 2, 2)
 
 -- Hide Border
 MinimapBorder:Hide()
@@ -47,10 +50,9 @@ MiniMapTracking:Hide()
 GameTimeFrame:Hide()
 
 -- Hide Mail Button
-MiniMapMailFrame:ClearAllPoints()
-MiniMapMailFrame:Point("TOPRIGHT", Minimap, 3, 3)
-MiniMapMailBorder:Hide()
-MiniMapMailIcon:SetTexture("Interface\\AddOns\\Tukui\\medias\\textures\\mail")
+MiniMapMailFrame:Kill()
+MiniMapMailBorder:Kill()
+MiniMapMailIcon:Kill()
 
 -- Move battleground icon
 MiniMapBattlefieldFrame:ClearAllPoints()
@@ -113,14 +115,36 @@ Minimap:SetMaskTexture(C.media.blank)
 function GetMinimapShape() return "SQUARE" end
 
 -- do some stuff on addon loaded or player login event
-TukuiMinimap:RegisterEvent("PLAYER_LOGIN")
-TukuiMinimap:RegisterEvent("ADDON_LOADED")
 TukuiMinimap:SetScript("OnEvent", function(self, event, addon)
 	if event == "PLAYER_LOGIN" then
 		UpdateLFGTooltip()
 	elseif addon == "Blizzard_TimeManager" then
 		-- Hide Game Time
 		TimeManagerClockButton:Kill()
+	else
+		local inv = CalendarGetNumPendingInvites()
+		local mail = HasNewMail()
+		if inv > 0 and mail then -- New invites and mail
+			TukuiMinimap:SetBackdropBorderColor(1, .5, 0)
+			if TukuiMinimapStatsLeft then
+				TukuiMinimapStatsLeft:SetBackdropBorderColor(1, .5, 0)
+			end
+		elseif inv > 0 and not mail then -- New invites and no mail
+			TukuiMinimap:SetBackdropBorderColor(1, 30/255, 60/255)
+			if TukuiMinimapStatsLeft then
+				TukuiMinimapStatsLeft:SetBackdropBorderColor(1, 30/255, 60/255)
+			end
+		elseif inv==0 and mail then -- No invites and new mail
+			TukuiMinimap:SetBackdropBorderColor(0, 1, 0)
+			if TukuiMinimapStatsLeft then
+				TukuiMinimapStatsLeft:SetBackdropBorderColor(0, 1, 0)
+			end
+		else -- None of the above
+			TukuiMinimap:SetBackdropBorderColor(unpack(C.media.bordercolor))
+			if TukuiMinimapStatsLeft then
+				TukuiMinimapStatsLeft:SetBackdropBorderColor(unpack(C.media.bordercolor))
+			end
+		end
 	end
 end)
 
@@ -130,33 +154,52 @@ end)
 
 local menuFrame = CreateFrame("Frame", "TukuiMinimapMiddleClickMenu", TukuiMinimap, "UIDropDownMenuTemplate")
 local menuList = {
-    {text = CHARACTER_BUTTON,
-    func = function() ToggleCharacter("PaperDollFrame") end},
-    {text = SPELLBOOK_ABILITIES_BUTTON,
-    func = function() ToggleFrame(SpellBookFrame) end},
-    {text = TALENTS_BUTTON,
-    func = function() if not PlayerTalentFrame then LoadAddOn("Blizzard_TalentUI") end if not GlyphFrame then LoadAddOn("Blizzard_GlyphUI") end PlayerTalentFrame_Toggle() end},
-    {text = ACHIEVEMENT_BUTTON,
-    func = function() ToggleAchievementFrame() end},
-    {text = QUESTLOG_BUTTON,
-    func = function() ToggleFrame(QuestLogFrame) end},
-    {text = SOCIAL_BUTTON,
-    func = function() ToggleFriendsFrame(1) end},
-    {text = PLAYER_V_PLAYER,
-    func = function() ToggleFrame(PVPFrame) end},
-    {text = ACHIEVEMENTS_GUILD_TAB,
-    func = function() if IsInGuild() then if not GuildFrame then LoadAddOn("Blizzard_GuildUI") end GuildFrame_Toggle() end end},
-    {text = LFG_TITLE,
-    func = function() ToggleFrame(LFDParentFrame) end},
-    {text = LOOKING_FOR_RAID,
-    func = function() ToggleFrame(LFRParentFrame) end},
-    {text = HELP_BUTTON,
-    func = function() ToggleHelpFrame() end},
-    {text = CALENDAR_VIEW_EVENT,
-    func = function()
-    if(not CalendarFrame) then LoadAddOn("Blizzard_Calendar") end
-        Calendar_Toggle()
-    end},
+	{text = CHARACTER_BUTTON,
+	func = function() ToggleCharacter("PaperDollFrame") end},
+	{text = SPELLBOOK_ABILITIES_BUTTON,
+	func = function() ToggleFrame(SpellBookFrame) end},
+	{text = TALENTS_BUTTON,
+	func = function() 
+		if not PlayerTalentFrame then 
+			LoadAddOn("Blizzard_TalentUI") 
+		end 
+
+		if not GlyphFrame then 
+			LoadAddOn("Blizzard_GlyphUI") 
+		end 
+		PlayerTalentFrame_Toggle() 
+	end},
+	{text = ACHIEVEMENT_BUTTON,
+	func = function() ToggleAchievementFrame() end},
+	{text = QUESTLOG_BUTTON,
+	func = function() ToggleFrame(QuestLogFrame) end},
+	{text = SOCIAL_BUTTON,
+	func = function() ToggleFriendsFrame(1) end},
+	{text = PLAYER_V_PLAYER,
+	func = function() ToggleFrame(PVPFrame) end},
+	{text = ACHIEVEMENTS_GUILD_TAB,
+	func = function() 
+		if IsInGuild() then 
+			if not GuildFrame then LoadAddOn("Blizzard_GuildUI") end 
+			GuildFrame_Toggle() 
+		else 
+			if not LookingForGuildFrame then LoadAddOn("Blizzard_LookingForGuildUI") end 
+			LookingForGuildFrame_Toggle() 
+		end
+	end},
+	{text = LFG_TITLE,
+	func = function() ToggleFrame(LFDParentFrame) end},
+	{text = LOOKING_FOR_RAID,
+	func = function() ToggleFrame(LFRParentFrame) end},
+	{text = HELP_BUTTON,
+	func = function() ToggleHelpFrame() end},
+	{text = CALENDAR_VIEW_EVENT,
+	func = function()
+	if(not CalendarFrame) then LoadAddOn("Blizzard_Calendar") end
+		Calendar_Toggle()
+	end},
+	{text = ENCOUNTER_JOURNAL,
+	func = function() if T.toc >= 40200 then ToggleFrame(EncounterJournal) end end}, 
 }
 
 Minimap:SetScript("OnMouseUp", function(self, btn)
@@ -177,9 +220,6 @@ Minimap:SetScript("OnMouseUp", function(self, btn)
 	end
 end)
 
--- eyefinity fix to not show tracking behind bezel
---MiniMapTrackingDropDown:SetParent(TukuiMinimap)
-
 ----------------------------------------------------------------------------------------
 -- Mouseover map, displaying zone and coords
 ----------------------------------------------------------------------------------------
@@ -190,9 +230,10 @@ m_zone:SetFrameLevel(5)
 m_zone:SetFrameStrata("LOW")
 m_zone:Point("TOPRIGHT",Minimap,-2,-2)
 m_zone:SetAlpha(0)
+m_zone:RemoveBD()
 
 local m_zone_text = m_zone:CreateFontString(nil,"Overlay")
-m_zone_text:SetFont(C["media"].font,12)
+m_zone_text:SetFont(C["media"].uffont, 8, "MONOCHROMEOUTLINE")
 m_zone_text:Point("TOP", 0, -1)
 m_zone_text:SetPoint("BOTTOM")
 m_zone_text:Height(12)
@@ -203,9 +244,10 @@ local m_coord = CreateFrame("Frame",nil,UIParent)
 m_coord:CreatePanel("Default", 40, 20, "BOTTOMLEFT", Minimap, "BOTTOMLEFT", 2,2)
 m_coord:SetFrameStrata("LOW")
 m_coord:SetAlpha(0)
+m_coord:RemoveBD()
 
 local m_coord_text = m_coord:CreateFontString(nil,"Overlay")
-m_coord_text:SetFont(C["media"].font,12)
+m_coord_text:SetFont(C["media"].uffont, 8, "MONOCHROMEOUTLINE")
 m_coord_text:Point("Center",-1,0)
 m_coord_text:SetAlpha(0)
 m_coord_text:SetText("00,00")

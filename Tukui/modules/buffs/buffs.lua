@@ -41,8 +41,8 @@ local function UpdateWeapons(button, slot, active, expiration)
 		button.texture:SetAllPoints()
 		
 		button.time = button:CreateFontString(nil, "ARTWORK")
-		button.time:SetPoint("BOTTOM", 0, -17)
-		button.time:SetFont(C.media.font, 12, "OUTLINE")
+		button.time:SetPoint("BOTTOM", 0, 2)
+		button.time:SetFont(C.media.uffont, 8, "MONOCHROMEOUTLINE")
 				
 		button.bg = CreateFrame("Frame", nil, button)
 		button.bg:CreatePanel("Default", 30, 30, "CENTER", button, "CENTER", 0, 0)
@@ -55,9 +55,17 @@ local function UpdateWeapons(button, slot, active, expiration)
 		button.id = GetInventorySlotInfo(slot)
 		button.icon = GetInventoryItemTexture("player", button.id)
 		button.texture:SetTexture(button.icon)
-		button.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)		
+		button.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		button.expiration = (expiration/1000)
-		button.bg:SetAlpha(1)
+		
+		if UnitHasVehicleUI("player") then
+			button:SetAlpha(0.3)
+			button.bg:SetAlpha(0.3)
+		else
+			button:SetAlpha(1)
+			button.bg:SetAlpha(1)
+		end
+		
 		button:SetScript("OnUpdate", UpdateTime)		
 	elseif not active then
 		button.texture:SetTexture(nil)
@@ -68,28 +76,29 @@ local function UpdateWeapons(button, slot, active, expiration)
 end
 
 local function UpdateAuras(header, button, weapon)
+	local name, _, texture, count, dtype, duration, expiration, caster = UnitAura(header:GetAttribute("unit"), button:GetID(), header:GetAttribute("filter"))
+	
 	if(not button.texture) then
 		button.texture = button:CreateTexture(nil, "BORDER")
 		button.texture:SetAllPoints()
 
 		button.count = button:CreateFontString(nil, "ARTWORK")
 		button.count:SetPoint("BOTTOMRIGHT", -1, 1)
-		button.count:SetFont(C.media.font, 12, "OUTLINE")
+		button.count:SetFont(C.media.uffont, 8, "MONOCHROMEOUTLINE")
 
 		button.time = button:CreateFontString(nil, "ARTWORK")
-		button.time:SetPoint("BOTTOM", 0, -17)
-		button.time:SetFont(C.media.font, 12, "OUTLINE")
+		button.time:SetPoint("BOTTOM", 0, 2)
+		button.time:SetFont(C.media.uffont, 8, "MONOCHROMEOUTLINE")
 
 		button:SetScript("OnUpdate", UpdateTime)
 		
-		button.bg = CreateFrame("Frame", nil, button)
-		button.bg:CreatePanel("Default", 30, 30, "CENTER", button, "CENTER", 0, 0)
-		button.bg:SetFrameLevel(button:GetFrameLevel() - 1)
-		button.bg:SetFrameStrata(button:GetFrameStrata())
+		button:AddBorder()
+		-- button.bg = CreateFrame("Frame", nil, button)
+		-- button.bg:CreatePanel("Default", 26, 26, "CENTER", button, "CENTER", 0, 0)
+		-- button.bg:SetFrameLevel(button:GetFrameLevel() - 1)
+		-- button.bg:SetFrameStrata(button:GetFrameStrata())
 	end
-	
-	local name, _, texture, count, dtype, duration, expiration = UnitAura(header:GetAttribute("unit"), button:GetID(), header:GetAttribute("filter"))
-	
+		
 	if(name) then
 		button.texture:SetTexture(texture)
 		button.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -98,8 +107,20 @@ local function UpdateAuras(header, button, weapon)
 		
 		if(header:GetAttribute("filter") == "HARMFUL") then
 			local color = DebuffTypeColor[dtype] or DebuffTypeColor.none
-			button.bg:SetBackdropBorderColor(color.r * 3/5, color.g * 3/5, color.b * 3/5)
+			button.Border:SetBackdropBorderColor(color.r * 3/5, color.g * 3/5, color.b * 3/5)
+		else
+			if caster == "vehicle" then
+				button.Border:SetBackdropBorderColor(75/255,  175/255, 76/255)
+			else
+				button.Border:SetBackdropBorderColor(unpack(C.media.bordercolor))
+			end
 		end
+	end
+	
+	if UnitHasVehicleUI("player") and caster ~= "vehicle" then
+		button:SetAlpha(0.3)
+	else
+		button:SetAlpha(1)
 	end
 end
 
@@ -143,11 +164,12 @@ local function CreateAuraHeader(filter, ...)
 	if filter == "HELPFUL" then name = "TukuiPlayerBuffs" else name = "TukuiPlayerDebuffs" end
 
 	local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
+	header:RegisterEvent("UNIT_ENTERED_VEHICLE")
+	header:RegisterEvent("UNIT_EXITED_VEHICLE")
 	header:SetPoint(...)
 	header:SetClampedToScreen(true)
 	header:SetMovable(true)
-	header:HookScript("OnEvent", ScanAuras)
-	
+	header:HookScript("OnEvent", ScanAuras)	
 	header:SetAttribute("unit", "player")
 	header:SetAttribute("sortMethod", "TIME")
 	header:SetAttribute("template", "TukuiAuraTemplate")
@@ -155,8 +177,8 @@ local function CreateAuraHeader(filter, ...)
 	header:SetAttribute("point", "TOPRIGHT")
 	header:SetAttribute("minWidth", 300)
 	header:SetAttribute("minHeight", 94)
-	header:SetAttribute("xOffset", -36)
-	header:SetAttribute("wrapYOffset", -68)
+	header:SetAttribute("xOffset", -30)
+	header:SetAttribute("wrapYOffset", -28)
 	header:SetAttribute("wrapAfter", 16)
 	header:SetAttribute("maxWraps", 2)
 	
@@ -172,7 +194,7 @@ local function CreateAuraHeader(filter, ...)
 	header:SetBackdropBorderColor(0,0,0,0)
 	header:Show()
 	
-	header.text = T.SetFontString(header, C.media.uffont, 12)
+	header.text = T.SetFontString(header, C.media.font, 12)
 	header.text:SetPoint("CENTER")
 	if filter == "HELPFUL" then
 		header.text:SetText(L.move_buffs)
@@ -199,10 +221,10 @@ start:SetScript("OnEvent", function(self)
 			frame:SetAttribute("point", position)
 		end
 		if position:match("LEFT") then
-			frame:SetAttribute("xOffset", 36)
+			frame:SetAttribute("xOffset", -30)
 		end
 		if position:match("BOTTOM") then
-			frame:SetAttribute("wrapYOffset", 68)
+			frame:SetAttribute("wrapYOffset", -28)
 		end
 		if T.lowversion then
 			frame:SetAttribute("wrapAfter", 8)

@@ -1,5 +1,13 @@
 local T, C, L = unpack(select(2, ...)) -- Import: T - functions, constants, variables; C - config; L - locales
 
+T.IsPTRVersion = function()
+	if T.toc > 40200 then
+		return true
+	else
+		return false
+	end
+end
+
 -- just for creating text
 T.SetFontString = function(parent, fontName, fontHeight, fontStyle)
 	local fs = parent:CreateFontString(nil, "OVERLAY")
@@ -12,58 +20,34 @@ end
 
 -- datatext panel position
 T.PP = function(p, obj)
-	local left = TukuiInfoLeft
-	local right = TukuiInfoRight
+	local pan = TukuiInfoPanel
 	local mapleft = TukuiMinimapStatsLeft
-	local mapright = TukuiMinimapStatsRight
 	
 	if p == 1 then
-		obj:SetParent(left)
-		obj:SetHeight(left:GetHeight())
-		obj:SetPoint("LEFT", left, 30, 0)
-		obj:SetPoint('TOP', left)
-		obj:SetPoint('BOTTOM', left)
+		obj:SetParent(pan)
+		obj:SetHeight(pan:GetHeight())
+		obj:SetPoint("LEFT", pan, 10, 0)
+		obj:SetPoint('TOP', pan)
+		obj:SetPoint('BOTTOM', pan)
 	elseif p == 2 then
-		obj:SetParent(left)
-		obj:SetHeight(left:GetHeight())
-		obj:SetPoint('TOP', left)
-		obj:SetPoint('BOTTOM', left)
+		obj:SetParent(pan)
+		obj:SetHeight(pan:GetHeight())
+		obj:SetPoint('TOP', pan)
+		obj:SetPoint('BOTTOM', pan)
 	elseif p == 3 then
-		obj:SetParent(left)
-		obj:SetHeight(left:GetHeight())
-		obj:SetPoint("RIGHT", left, -30, 0)
-		obj:SetPoint('TOP', left)
-		obj:SetPoint('BOTTOM', left)
-	elseif p == 4 then
-		obj:SetParent(right)
-		obj:SetHeight(right:GetHeight())
-		obj:SetPoint("LEFT", right, 30, 0)
-		obj:SetPoint('TOP', right)
-		obj:SetPoint('BOTTOM', right)
-	elseif p == 5 then
-		obj:SetParent(right)
-		obj:SetHeight(right:GetHeight())
-		obj:SetPoint('TOP', right)
-		obj:SetPoint('BOTTOM', right)
-	elseif p == 6 then
-		obj:SetParent(right)
-		obj:SetHeight(right:GetHeight())
-		obj:SetPoint("RIGHT", right, -30, 0)
-		obj:SetPoint('TOP', right)
-		obj:SetPoint('BOTTOM', right)
+		obj:SetParent(pan)
+		obj:SetHeight(pan:GetHeight())
+		obj:SetPoint("RIGHT", pan, -10, 0)
+		obj:SetPoint('TOP', pan)
+		obj:SetPoint('BOTTOM', pan)
 	end
 	
 	if TukuiMinimap then
-		if p == 7 then
+		if p == 4 then
 			obj:SetParent(mapleft)
 			obj:SetHeight(mapleft:GetHeight())
 			obj:SetPoint('TOP', mapleft)
-			obj:SetPoint('BOTTOM', mapleft)
-		elseif p == 8 then
-			obj:SetParent(mapright)
-			obj:SetHeight(mapright:GetHeight())
-			obj:SetPoint('TOP', mapright)
-			obj:SetPoint('BOTTOM', mapright)
+			obj:SetPoint('BOTTOM', mapleft, 0, 1)
 		end
 	end
 end
@@ -74,20 +58,18 @@ T.DataTextTooltipAnchor = function(self)
 	local xoff = 0
 	local yoff = T.Scale(5)
 	
-	if panel == TukuiInfoLeft then
+	if panel == TukuiInfoPanel then
 		anchor = "ANCHOR_TOPLEFT"
-	elseif panel == TukuiInfoRight then
-		anchor = "ANCHOR_TOPRIGHT"
-	elseif panel == TukuiMinimapStatsLeft or panel == TukuiMinimapStatsRight then
+	elseif panel == TukuiMinimapStatsLeft then
 		local position = TukuiMinimap:GetPoint()
 		if position:match("LEFT") then
 			anchor = "ANCHOR_BOTTOMRIGHT"
 			yoff = T.Scale(-6)
-			xoff = 0 - TukuiMinimapStatsRight:GetWidth()
+			xoff = 0 - TukuiMinimapStatsLeft:GetWidth()
 		elseif position:match("RIGHT") then
 			anchor = "ANCHOR_BOTTOMLEFT"
 			yoff = T.Scale(-6)
-			xoff = TukuiMinimapStatsRight:GetWidth()
+			xoff = TukuiMinimapStatsLeft:GetWidth()
 		else
 			anchor = "ANCHOR_BOTTOM"
 			yoff = T.Scale(-6)
@@ -280,6 +262,39 @@ function T.ShortValue(v)
 		return v
 	end
 end
+
+--Add time before calling a function
+--Usage T.Delay(seconds, functionToCall, ...)
+local waitTable = {}
+local waitFrame
+function T.Delay(delay, func, ...)
+	if(type(delay)~="number" or type(func)~="function") then
+		return false
+	end
+	if(waitFrame == nil) then
+		waitFrame = CreateFrame("Frame","WaitFrame", UIParent)
+		waitFrame:SetScript("onUpdate",function (self,elapse)
+			local count = #waitTable
+			local i = 1
+			while(i<=count) do
+				local waitRecord = tremove(waitTable,i)
+				local d = tremove(waitRecord,1)
+				local f = tremove(waitRecord,1)
+				local p = tremove(waitRecord,1)
+				if(d>elapse) then
+				  tinsert(waitTable,i,{d-elapse,f,p})
+				  i = i + 1
+				else
+				  count = count - 1
+				  f(unpack(p))
+				end
+			end
+		end)
+	end
+	tinsert(waitTable,{delay,func,{...}})
+	return true
+end
+
 ------------------------------------------------------------------------
 --	unitframes Functions
 ------------------------------------------------------------------------
@@ -460,16 +475,6 @@ T.PostUpdatePetColor = function(health, unit, min, max)
 	end
 end
 
-T.PostNamePosition = function(self)
-	self.Name:ClearAllPoints()
-	if (self.Power.value:GetText() and UnitIsEnemy("player", "target") and C["unitframes"].targetpowerpvponly == true) or (self.Power.value:GetText() and C["unitframes"].targetpowerpvponly == false) then
-		self.Name:SetPoint("CENTER", self.panel, "CENTER", 0, 0)
-	else
-		self.Power.value:SetAlpha(0)
-		self.Name:SetPoint("LEFT", self.panel, "LEFT", 4, 0)
-	end
-end
-
 T.PreUpdatePower = function(power, unit)
 	local _, pType = UnitPowerType(unit)
 	
@@ -527,9 +532,6 @@ T.PostUpdatePower = function(power, unit, min, max)
 			end
 		end
 	end
-	if self.Name then
-		if unit == "target" then T.PostNamePosition(self, power) end
-	end
 end
 
 T.CustomCastTimeText = function(self, duration)
@@ -582,42 +584,34 @@ local CreateAuraTimer = function(self, elapsed)
 end
 
 T.PostCreateAura = function(element, button)
-	T.SetTemplate(button)
+	button:SetTemplate("Default")
 	
-	button.remaining = T.SetFontString(button, C["media"].font, C["unitframes"].auratextscale, "THINOUTLINE")
+	button.remaining = T.SetFontString(button, C["media"].uffont, C["unitframes"].auratextscale, "MONOCHROMEOUTLINE")
 	button.remaining:Point("CENTER", 1, 0)
 	
 	button.cd.noOCC = true		 	-- hide OmniCC CDs
 	button.cd.noCooldownCount = true	-- hide CDC CDs
 	
 	button.cd:SetReverse()
-	button.icon:Point("TOPLEFT", 2, -2)
-	button.icon:Point("BOTTOMRIGHT", -2, 2)
+	button.icon:Point("TOPLEFT", T.pix, -(T.pix))
+	button.icon:Point("BOTTOMRIGHT", -(T.pix), T.pix)
 	button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	button.icon:SetDrawLayer('ARTWORK')
 	
 	button.count:Point("BOTTOMRIGHT", 3, 3)
 	button.count:SetJustifyH("RIGHT")
-	button.count:SetFont(C["media"].font, 9, "THICKOUTLINE")
+	button.count:SetFont(C["media"].uffont, 8, "MONOCHROMEOUTLINE")
 	button.count:SetTextColor(0.84, 0.75, 0.65)
 	
 	button.overlayFrame = CreateFrame("frame", nil, button, nil)
 	button.cd:SetFrameLevel(button:GetFrameLevel() + 1)
 	button.cd:ClearAllPoints()
-	button.cd:Point("TOPLEFT", button, "TOPLEFT", 2, -2)
-	button.cd:Point("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
+	button.cd:Point("TOPLEFT", button, "TOPLEFT", T.pix, -(T.pix))
+	button.cd:Point("BOTTOMRIGHT", button, "BOTTOMRIGHT", -(T.pix), T.pix)
 	button.overlayFrame:SetFrameLevel(button.cd:GetFrameLevel() + 1)	   
 	button.overlay:SetParent(button.overlayFrame)
 	button.count:SetParent(button.overlayFrame)
 	button.remaining:SetParent(button.overlayFrame)
-			
-	button.Glow = CreateFrame("Frame", nil, button)
-	button.Glow:Point("TOPLEFT", button, "TOPLEFT", -3, 3)
-	button.Glow:Point("BOTTOMRIGHT", button, "BOTTOMRIGHT", 3, -3)
-	button.Glow:SetFrameStrata("BACKGROUND")	
-	button.Glow:SetBackdrop{edgeFile = C["media"].glowTex, edgeSize = 3, insets = {left = 0, right = 0, top = 0, bottom = 0}}
-	button.Glow:SetBackdropColor(0, 0, 0, 0)
-	button.Glow:SetBackdropBorderColor(0, 0, 0)
 end
 
 T.PostUpdateAura = function(icons, unit, icon, index, offset, filter, isDebuff, duration, timeLeft)
@@ -631,6 +625,12 @@ T.PostUpdateAura = function(icons, unit, icon, index, offset, filter, isDebuff, 
 			local color = DebuffTypeColor[dtype] or DebuffTypeColor.none
 			icon:SetBackdropBorderColor(color.r * 0.6, color.g * 0.6, color.b * 0.6)
 			icon.icon:SetDesaturated(false)
+		end
+	else
+		if (isStealable or ((T.myclass == "MAGE" or T.myclass == "PRIEST" or T.myclass == "SHAMAN") and dtype == "Magic")) and not UnitIsFriend("player", unit) then
+			icon:SetBackdropBorderColor(1, 0.85, 0, 1)
+		else
+			icon:SetBackdropBorderColor(unpack(C.media.bordercolor))
 		end
 	end
 	
@@ -651,20 +651,20 @@ T.PostUpdateAura = function(icons, unit, icon, index, offset, filter, isDebuff, 
 end
 
 T.HidePortrait = function(self, unit)
-	if self.unit == "target" then
-		if not UnitExists(self.unit) or not UnitIsConnected(self.unit) or not UnitIsVisible(self.unit) then
-			self.Portrait:SetAlpha(0)
-		else
-			self.Portrait:SetAlpha(1)
-		end
-	end
+    if self.unit == "target" then
+        if not UnitExists(self.unit) or not UnitIsConnected(self.unit) or not UnitIsVisible(self.unit) then
+            self.Portrait:SetAlpha(0)
+        else
+            self.Portrait:SetAlpha(0.3)
+        end
+    end
 end
 
-T.PortraitUpdate = function(self, unit) 
+T.PortraitUpdate = function(self, unit)
 	--Fucking Furries
 	if self:GetModel() and self:GetModel().find and self:GetModel():find("worgenmale") then
 		self:SetCamera(1)
-	end	
+	end
 end
 
 local CheckInterrupt = function(self, unit)
@@ -826,24 +826,6 @@ T.UpdateDruidMana = function(self)
 	end
 end
 
-T.UpdateThreat = function(self, event, unit)
-	if (self.unit ~= unit) or (unit == "target" or unit == "pet" or unit == "focus" or unit == "focustarget" or unit == "targettarget") then return end
-	local threat = UnitThreatSituation(self.unit)
-	if (threat == 3) then
-		if self.panel then
-			self.panel:SetBackdropBorderColor(.69,.31,.31,1)
-		else
-			self.Name:SetTextColor(1,0.1,0.1)
-		end
-	else
-		if self.panel then
-			self.panel:SetBackdropBorderColor(unpack(C["media"].altbordercolor))
-		else
-			self.Name:SetTextColor(1,1,1)
-		end
-	end 
-end
-
 --------------------------------------------------------------------------------------------
 -- THE AURAWATCH FUNCTION ITSELF. HERE BE DRAGONS!
 --------------------------------------------------------------------------------------------
@@ -873,8 +855,8 @@ end
 
 T.createAuraWatch = function(self, unit)
 	local auras = CreateFrame("Frame", nil, self)
-	auras:SetPoint("TOPLEFT", self.Health, 2, -2)
-	auras:SetPoint("BOTTOMRIGHT", self.Health, -2, 2)
+	auras:SetPoint("TOPLEFT", self.Health, T.pix, -(T.pix))
+	auras:SetPoint("BOTTOMRIGHT", self.Health, -(T.pix), T.pix)
 	auras.presentAlpha = 1
 	auras.missingAlpha = 0
 	auras.icons = {}
@@ -904,8 +886,8 @@ T.createAuraWatch = function(self, unit)
 			local icon = CreateFrame("Frame", nil, auras)
 			icon.spellID = spell[1]
 			icon.anyUnit = spell[4]
-			icon:SetWidth(T.Scale(6*C["unitframes"].gridscale))
-			icon:SetHeight(T.Scale(6*C["unitframes"].gridscale))
+			icon:Width(6*C["unitframes"].gridscale)
+			icon:Height(6*C["unitframes"].gridscale)
 			icon:SetPoint(spell[2], 0, 0)
 
 			local tex = icon:CreateTexture(nil, "OVERLAY")
@@ -918,7 +900,7 @@ T.createAuraWatch = function(self, unit)
 			end
 
 			local count = icon:CreateFontString(nil, "OVERLAY")
-			count:SetFont(C["media"].uffont, 8*C["unitframes"].gridscale, "THINOUTLINE")
+			count:SetFont(C["media"].uffont, 8*C["unitframes"].gridscale, "MONOCHROMEOUTLINE")
 			count:SetPoint("CENTER", unpack(T.countOffsets[spell[2]]))
 			icon.count = count
 

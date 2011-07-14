@@ -18,8 +18,8 @@ if C["datatext"].micromenu and C["datatext"].micromenu > 0 then
 	Stat:SetFrameStrata("BACKGROUND")
 	Stat:SetFrameLevel(3)
 
-	local Text  = TukuiInfoLeft:CreateFontString(nil, "OVERLAY")
-	Text:SetFont(C.media.font, C["datatext"].fontsize)
+	local Text  = TukuiInfoPanel:CreateFontString(nil, "OVERLAY")
+	Text:SetFont(C.media.uffont, C["datatext"].fontsize)
 	T.PP(C["datatext"].micromenu, Text)
 
 	local function OnEvent(self, event, ...)
@@ -35,7 +35,16 @@ if C["datatext"].micromenu and C["datatext"].micromenu > 0 then
 			{text = SPELLBOOK_ABILITIES_BUTTON,
 			func = function() ToggleFrame(SpellBookFrame) end},
 			{text = TALENTS_BUTTON,
-			func = function() if not PlayerTalentFrame then LoadAddOn("Blizzard_TalentUI") end if not GlyphFrame then LoadAddOn("Blizzard_GlyphUI") end PlayerTalentFrame_Toggle() end},
+			func = function() 
+				if not PlayerTalentFrame then 
+					LoadAddOn("Blizzard_TalentUI") 
+				end 
+				
+				if not GlyphFrame then 
+					LoadAddOn("Blizzard_GlyphUI") 
+				end 
+				PlayerTalentFrame_Toggle() 
+			end},
 			{text = ACHIEVEMENT_BUTTON,
 			func = function() ToggleAchievementFrame() end},
 			{text = QUESTLOG_BUTTON,
@@ -45,7 +54,15 @@ if C["datatext"].micromenu and C["datatext"].micromenu > 0 then
 			{text = PLAYER_V_PLAYER,
 			func = function() ToggleFrame(PVPFrame) end},
 			{text = ACHIEVEMENTS_GUILD_TAB,
-			func = function() if IsInGuild() then if not GuildFrame then LoadAddOn("Blizzard_GuildUI") end GuildFrame_Toggle() end end},
+			func = function() 
+				if IsInGuild() then 
+					if not GuildFrame then LoadAddOn("Blizzard_GuildUI") end 
+					GuildFrame_Toggle() 
+				else 
+					if not LookingForGuildFrame then LoadAddOn("Blizzard_LookingForGuildUI") end 
+					LookingForGuildFrame_Toggle() 
+				end
+			end},
 			{text = LFG_TITLE,
 			func = function() ToggleFrame(LFDParentFrame) end},
 			{text = LOOKING_FOR_RAID,
@@ -57,6 +74,8 @@ if C["datatext"].micromenu and C["datatext"].micromenu > 0 then
 			if(not CalendarFrame) then LoadAddOn("Blizzard_Calendar") end
 				Calendar_Toggle()
 			end},
+			{text = ENCOUNTER_JOURNAL,
+			func = function() if T.toc >= 40200 then ToggleFrame(EncounterJournal) end end}, 
 		}
 
 		EasyMenu(menuList, menuFrame, "cursor", 0, 0, "MENU", 2)

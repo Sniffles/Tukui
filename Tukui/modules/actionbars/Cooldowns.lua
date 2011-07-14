@@ -9,14 +9,13 @@ if IsAddOnLoaded("OmniCC") or IsAddOnLoaded("ncCooldown") or C["cooldown"].enabl
 
 --constants!
 OmniCC = true --hack to work around detection from other addons for OmniCC
-local ICON_SIZE = 36 --the normal size for an icon (don't change this)
+local ICON_SIZE = 24 --the normal size for an icon (don't change this)
 local DAY, HOUR, MINUTE = 86400, 3600, 60 --used for formatting text
 local DAYISH, HOURISH, MINUTEISH = 3600 * 23.5, 60 * 59.5, 59.5 --used for formatting text at transition points
 local HALFDAYISH, HALFHOURISH, HALFMINUTEISH = DAY/2 + 0.5, HOUR/2 + 0.5, MINUTE/2 + 0.5 --used for calculating next update times
 
 --configuration settings
-local FONT_FACE = C["media"].font --what font to use
-local FONT_SIZE = 20 --the base font size to use at a scale of 1
+local FONT_FACE = C["media"].uffont --what font to use
 local MIN_SCALE = 0.5 --the minimum scale we want to show cooldown counts at, anything below this will be hidden
 local MIN_DURATION = 2.5 --the minimum duration to show cooldown text for
 local EXPIRING_DURATION = C["cooldown"].treshold --the minimum number of seconds a cooldown must be to use to display in the expiring format
@@ -81,7 +80,7 @@ local function Timer_OnSizeChanged(self, width, height)
 	if fontScale < MIN_SCALE then
 		self:Hide()
 	else
-		self.text:SetFont(FONT_FACE, fontScale * FONT_SIZE, 'OUTLINE')
+		self.text:SetFont(FONT_FACE, 8, 'MONOCHROMEOUTLINE')
 		self.text:SetShadowColor(0, 0, 0, 0.5)
 		self.text:SetShadowOffset(2, -2)
 		if self.enabled then

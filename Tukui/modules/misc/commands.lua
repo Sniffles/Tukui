@@ -26,22 +26,19 @@ end
 SLASH_CLFIX1 = "/clfix"
 SlashCmdList.CLFIX = CombatLogClearEntries
 
-SLASH_RAIDDISBAND1 = "/rd"
-SlashCmdList["RAIDDISBAND"] = function()
-		SendChatMessage(L.disband, "RAID" or "PARTY")
-		if UnitInRaid("player") then
-			for i=1, GetNumRaidMembers() do
-				local name, _, _, _, _, _, _, online = GetRaidRosterInfo(i)
-				if online and name ~= T.myname then
-					UninviteUnit(name)
-				end
-			end
-		else
-			for i=MAX_PARTY_MEMBERS, 1, -1 do
-				if GetPartyMember(i) then
-					UninviteUnit(UnitName("party"..i))
-				end
-			end
-		end
-		LeaveParty()
+-- ready check shortcut
+SlashCmdList.RCSLASH = DoReadyCheck
+SLASH_RCSLASH1 = "/rc"
+
+SlashCmdList["GROUPDISBAND"] = function()
+	if UnitIsRaidOfficer("player") then
+		StaticPopup_Show("TUKUIDISBAND_RAID")
+	end
 end
+SLASH_GROUPDISBAND1 = '/rd'
+
+-- Leave party chat command
+SlashCmdList["LEAVEPARTY"] = function()
+	LeaveParty()
+end
+SLASH_LEAVEPARTY1 = '/leaveparty'

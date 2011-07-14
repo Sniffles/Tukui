@@ -68,7 +68,8 @@ bar:SetScript("OnEvent", function(self, event, ...)
 			
 		RegisterStateDriver(self, "page", GetBar())
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		MainMenuBar_UpdateKeyRing()
+		if T.toc < 40200 then MainMenuBar_UpdateKeyRing() end
+		
 		local button
 		for i = 1, 12 do
 			button = _G["ActionButton"..i]
@@ -78,7 +79,9 @@ bar:SetScript("OnEvent", function(self, event, ...)
 			button:SetFrameStrata("BACKGROUND")
 			button:SetFrameLevel(15)
 			if i == 1 then
-				button:SetPoint("BOTTOMLEFT", T.buttonspacing, T.buttonspacing)
+				button:SetPoint("BOTTOMLEFT", TukuiInfoPanel, "TOPLEFT", 20, 2)
+			elseif i == 9 then
+				button:SetPoint("TOPLEFT", TukuiInfoPanel, "BOTTOMLEFT", 20, -2)
 			else
 				local previous = _G["ActionButton"..i-1]
 				button:SetPoint("LEFT", previous, "RIGHT", T.buttonspacing, 0)

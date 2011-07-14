@@ -8,8 +8,8 @@ if C["datatext"].crit and C["datatext"].crit > 0 then
 	Stat:SetFrameStrata("BACKGROUND")
 	Stat:SetFrameLevel(3)
 
-	local Text  = TukuiInfoLeft:CreateFontString(nil, "OVERLAY")
-	Text:SetFont(C.media.font, C["datatext"].fontsize)
+	local Text  = TukuiInfoPanel:CreateFontString(nil, "OVERLAY")
+	Text:SetFont(C.media.uffont, C["datatext"].fontsize)
 	T.PP(C["datatext"].crit, Text)
 
 	local int = 1

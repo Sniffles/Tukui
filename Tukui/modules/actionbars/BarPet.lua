@@ -6,10 +6,8 @@ if not C["actionbar"].enable == true then return end
 ---------------------------------------------------------------------------
 
 local bar = TukuiPetBar
-local link = TukuiLineToPetActionBarBackground
 bar:SetAlpha(1)
-link:SetAlpha(.8)
-	
+
 bar:RegisterEvent("PLAYER_LOGIN")
 bar:RegisterEvent("PLAYER_CONTROL_LOST")
 bar:RegisterEvent("PLAYER_CONTROL_GAINED")

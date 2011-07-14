@@ -11,6 +11,10 @@ if not C["unitframes"].enable == true then return end
 local font2 = C["media"].uffont
 local font1 = C["media"].font
 local normTex = C["media"].normTex
+local backdrop = {
+	bgFile = C["media"].blank,
+	insets = {top = -T.mult, left = -T.mult, bottom = -T.mult, right = -T.mult},
+}
 
 local function Shared(self, unit)
 	self.colors = T.oUF_colors
@@ -213,8 +217,8 @@ local function Shared(self, unit)
 		--[[
 		if C["unitframes"].auratimer then
 			RaidDebuffs.cd = CreateFrame('Cooldown', nil, RaidDebuffs)
-			RaidDebuffs.cd:SetPoint("TOPLEFT", T.Scale(2), T.Scale(-2))
-			RaidDebuffs.cd:SetPoint("BOTTOMRIGHT", T.Scale(-2), T.Scale(2))
+			RaidDebuffs.cd:Point("TOPLEFT", 2, -2)
+			RaidDebuffs.cd:Point("BOTTOMRIGHT", -2, 2)
 			RaidDebuffs.cd.noOCC = true -- remove this line if you want cooldown number on it
 		end
 		--]]

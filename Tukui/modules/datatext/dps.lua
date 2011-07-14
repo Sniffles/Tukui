@@ -12,8 +12,8 @@ if C["datatext"].dps_text and C["datatext"].dps_text > 0 then
 
 	local pet_id = UnitGUID("pet")
      
-	local dText = TukuiInfoLeft:CreateFontString(nil, "OVERLAY")
-	dText:SetFont(C.media.font, C["datatext"].fontsize)
+	local dText = TukuiInfoPanel:CreateFontString(nil, "OVERLAY")
+	dText:SetFont(C.media.uffont, C["datatext"].fontsize)
 	dText:SetText("0.0 ",L.datatext_dps)
 
 	T.PP(C["datatext"].dps_text, dText)
@@ -57,13 +57,21 @@ if C["datatext"].dps_text and C["datatext"].dps_text > 0 then
 		if not events[select(2, ...)] then return end
 
 		-- only use events from the player
-		local id = select(3, ...)
+		local id = select(4, ...)
 		   
 		if id == player_id or id == pet_id then
 			if select(2, ...) == "SWING_DAMAGE" then
-				last_dmg_amount = select(9, ...)
+				if T.toc < 40200 then
+					last_dmg_amount = select(10, ...)
+				else
+					last_dmg_amount = select(12, ...)
+				end
 			else
-				last_dmg_amount = select(12, ...)
+				if T.toc < 40200 then
+					last_dmg_amount = select(13, ...)
+				else
+					last_dmg_amount = select(15, ...)
+				end
 			end
 			dmg_total = dmg_total + last_dmg_amount
 		end       
